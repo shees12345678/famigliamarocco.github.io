@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+    <title>Lista Utenti</title>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Lista Utenti</h1>
+            <p>Benvenuto, <span id="username"></span>! <a href="/logout">Logout</a></p>
+        </div>
+        <div id="master-section" style="display:none;">
+            <h2>Assegna Compito</h2>
+            <form id="assign-task-form">
+                <label for="user_id">Assegna a:</label>
+                <select id="user_id" name="user_id" required></select>
+                <label for="descrizione_compito">Compito:</label>
+                <input type="text" id="descrizione_compito" name="descrizione_compito" required>
+                <button type="submit">Assegna Compito</button>
+            </form>
+        </div>
+        <div class="task-list">
+            <h2>I Tuoi Compiti</h2>
+            <ul id="task-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('/dati/utente_corrente')
+                .then(response => response.json())
+                .then(currentUser => {
+                    document.getElementById('username').textContent = currentUser.username;
+                    if (currentUser.role === 'master') {
+                        document.getElementById('master-section').style.display = 'block';
+                    }
+
+                    fetch('/dati/utenti')
+                        .then(response => response.json())
+                        .then(users => {
+                            if (currentUser.role === 'master') {
+                                const userSelect = document.getElementById('user_id');
+                                users.forEach(user => {
+                                    const option = document.createElement('option');
+                                    option.value = user.id;
+                                    option.textContent = user.username;
+                                    userSelect.appendChild(option);
+                                });
+                            }
+
+                            fetch('/dati/compiti')
+                                .then(response => response.json())
+                                .then(tasks => {
+                                    const taskList = document.getElementById('task-list');
+                                    tasks.forEach(task => {
+                                        if (task.user_id === currentUser.id || currentUser.role === 'master') {
+                                            const li = document.createElement('li');
+                                            const user = users.find(u => u.id === task.user_id);
+                                            li.textContent = `${task.description} (Assegnato a: ${user.username}) - ${task.completed ? 'Completato' : 'Non Completato'}`;
+                                            if (task.completed) {
+                                            }
+                                            if (task.user_id === currentUser.id && !task.completed) {
+                                                const button = document.createElement('button');
+                                                button.textContent = 'Completa';
+                                                button.className = 'complete-task';
+                                                button.addEventListener('click', () => {
+                                                    fetch('/completa_compito', {
+                                                        method: 'POST',
+                                                        headers: {
+                                                            'Content-Type': 'application/x-www-form-urlencoded'
+                                                        },
+                                                        body: `task_id=${task.id}`
+                                                    }).then(response => {
+                                                        if (response.ok) {
+                                                            window.location.reload();
+                                                        }
+                                                    });
+                                                });
+                                                li.appendChild(button);
+                                            }
+                                            taskList.appendChild(li);
+                                        }
+                                    });
+                                });
+                        });
+
+                    document.getElementById('assign-task-form').addEventListener('submit', (event) => {
+                        event.preventDefault();
+                        const formData = new FormData(event.target);
+                        fetch('/assegna_compito', {
+                            method: 'POST',
+                            body: new URLSearchParams(formData)
+                        }).then(response => {
+                            if (response.ok) {
+                                window.location.reload();
+                            }
+                        });
+                    });
+                });
+        });
+    </script>
+</body>
+</html>

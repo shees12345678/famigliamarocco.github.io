@@ -1,0 +1,79 @@
+[
+  {
+    "id": 3,
+    "user_id": 5,
+    "description": "Inglese ",
+    "completed": false,
+    "date_assigned": "2024-05-15T15:56:19.318Z",
+    "date_completed": null,
+    "deadline": "2024-05-17",
+    "photo": "1715788578994-image.jpg",
+    "completed_photo": null
+  },
+  {
+    "id": 4,
+    "user_id": 5,
+    "description": "Letteratura",
+    "completed": false,
+    "date_assigned": "2024-05-15T16:10:56.136Z",
+    "date_completed": null,
+    "deadline": "2024-05-22",
+    "photo": "1715789455840-image.jpg",
+    "completed_photo": null
+  },
+  {
+    "id": 5,
+    "user_id": 5,
+    "description": "Tecnologia spot pubblicitario",
+    "completed": false,
+    "date_assigned": "2024-05-15T16:11:57.263Z",
+    "date_completed": null,
+    "deadline": "2024-05-27",
+    "photo": null,
+    "completed_photo": null
+  },
+  {
+    "id": 6,
+    "user_id": 5,
+    "description": "Mappe illuminismo",
+    "completed": false,
+    "date_assigned": "2024-05-15T16:12:43.868Z",
+    "date_completed": null,
+    "deadline": "2024-05-21",
+    "photo": null,
+    "completed_photo": null
+  },
+  {
+    "id": 7,
+    "user_id": 3,
+    "description": "Esercizi informatica ",
+    "completed": false,
+    "date_assigned": "2024-05-15T16:15:30.475Z",
+    "date_completed": null,
+    "deadline": "2024-05-15",
+    "photo": "1715789730333-image.jpg",
+    "completed_photo": null
+  },
+  {
+    "id": 8,
+    "user_id": 3,
+    "description": "Consegnare web e grafica ",
+    "completed": false,
+    "date_assigned": "2024-05-15T16:16:39.712Z",
+    "date_completed": null,
+    "deadline": "2024-05-19",
+    "photo": null,
+    "completed_photo": null
+  },
+  {
+    "id": 9,
+    "user_id": 1,
+    "description": "c",
+    "completed": false,
+    "date_assigned": "2024-05-15T17:30:33.993Z",
+    "date_completed": null,
+    "deadline": "2000-02-22",
+    "photo": null,
+    "completed_photo": null
+  }
+]

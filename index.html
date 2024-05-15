@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+    <title>Lista Utenti</title>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 id="welcome">Benvenuto, <span id="username"></span>!</h1>
+            <p><a href="/logout">Logout</a></p>
+        </div>
+        <div class="main-content">
+            <div class="task-list">
+                <h2>I Tuoi Compiti</h2>
+                <div id="filter-section" style="display:none;">
+                    <label for="filter_user_id">Filtra per utente:</label>
+                    <select id="filter_user_id">
+                        <option value="">Tutti</option>
+                    </select>
+                </div>
+                <ul id="task-list"></ul>
+            </div>
+            <div id="master-section" style="display:none;">
+                <h2>Assegna Compito</h2>
+                <form id="assign-task-form" enctype="multipart/form-data">
+                    <label for="user_id">Assegna a:</label>
+                    <select id="user_id" name="user_id" required></select>
+                    <label for="descrizione_compito">Compito:</label>
+                    <input type="text" id="descrizione_compito" name="descrizione_compito" required>
+                    <label for="scadenza">Scadenza:</label>
+                    <input type="date" id="scadenza" name="scadenza" required>
+                    <label for="photo">Allega una foto (opzionale):</label>
+                    <input type="file" id="photo" name="photo">
+                    <button type="submit">Assegna Compito</button>
+                </form>
+            </div>
+        </div>
+        <div class="footer">
+            <p>© 2024 La tua azienda</p>
+        </div>
+    </div>
+
+    <!-- Modale per l'upload della foto -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <form id="complete-task-form" method="POST" action="/completa_compito" enctype="multipart/form-data">
+                <input type="hidden" id="task_id" name="task_id">
+                <label for="photo">Carica una foto del compito:</label>
+                <input type="file" id="photo" name="photo" required>
+                <button type="submit">Carica Foto e Completa</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modale per la visualizzazione delle foto -->
+    <div id="viewPhotoModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeViewPhotoModal">&times;</span>
+            <img id="viewPhoto" style="width: 100%;">
+        </div>
+    </div>
+
+    <!-- Modale per la modifica del compito -->
+    <div id="editTaskModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <form id="edit-task-form" method="POST" action="/modifica_compito" enctype="multipart/form-data">
+                <input type="hidden" id="edit_task_id" name="task_id">
+                <label for="edit_user_id">Assegna a:</label>
+                <select id="edit_user_id" name="user_id" required></select>
+                <label for="edit_descrizione_compito">Compito:</label>
+                <input type="text" id="edit_descrizione_compito" name="descrizione_compito" required>
+                <label for="edit_scadenza">Scadenza:</label>
+                <input type="date" id="edit_scadenza" name="scadenza" required>
+                <label for="edit_photo">Allega una foto (opzionale):</label>
+                <input type="file" id="edit_photo" name="photo">
+                <button type="submit">Modifica Compito</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentUser = {};
+
+            fetch('/dati/utente_corrente')
+                .then(response => response.json())
+                .then(user => {
+                    Object.assign(currentUser, user);
+                    document.getElementById('username').textContent = currentUser.username;
+
+                    if (currentUser.role === 'master') {
+                        document.getElementById('master-section').style.display = 'block';
+                        document.getElementById('filter-section').style.display = 'block';
+                    }
+
+                    fetch('/dati/utenti')
+                        .then(response => response.json())
+                        .then(users => {
+                            if (currentUser.role === 'master') {
+                                const userSelect = document.getElementById('user_id');
+                                const filterUserSelect = document.getElementById('filter_user_id');
+                                const editUserSelect = document.getElementById('edit_user_id');
+                                users.forEach(user => {
+                                    const option = document.createElement('option');
+                                    option.value = user.id;
+                                    option.textContent = user.username;
+                                    userSelect.appendChild(option);
+
+                                    const filterOption = document.createElement('option');
+                                    filterOption.value = user.id;
+                                    filterOption.textContent = user.username;
+                                    filterUserSelect.appendChild(filterOption);
+
+                                    const editOption = document.createElement('option');
+                                    editOption.value = user.id;
+                                    editOption.textContent = user.username;
+                                    editUserSelect.appendChild(editOption);
+                                });
+                            }
+
+                            // Carica i compiti e applica il filtro iniziale
+                            loadTasks(users);
+                        });
+
+                    document.getElementById('assign-task-form').addEventListener('submit', (event) => {
+                        event.preventDefault();
+                        const formData = new FormData(event.target);
+                        fetch('/assegna_compito', {
+                            method: 'POST',
+                            body: formData
+                        }).then(response => {
+                            if (response.ok) {
+                                window.location.reload();
+                            }
+                        });
+                    });
+
+                    document.getElementById('filter_user_id').addEventListener('change', () => loadTasks());
+                });
+
+            // Funzione per caricare i compiti e applicare il filtro
+            function loadTasks(users = []) {
+                fetch('/dati/compiti')
+                    .then(response => response.json())
+                    .then(tasks => {
+                        const taskList = document.getElementById('task-list');
+                        taskList.innerHTML = '';
+                        const filterUserId = document.getElementById('filter_user_id').value;
+
+                        tasks
+                            .filter(task => !filterUserId || task.user_id == filterUserId)
+                            .forEach(task => {
+                                const li = document.createElement('li');
+                                li.className = 'task-box';
+                                const user = users.find(u => u.id === task.user_id);
+
+                                // Genera il contenuto del compito
+                                let taskContent = `
+                                    <strong>${task.description}</strong><br>
+                                    <em>Scadenza: ${task.deadline}</em><br>
+                                    <em>${task.completed ? 'Completato' : 'Non Completato'}</em>
+                                `;
+
+                                // Se l'utente corrente è un master e non è stato applicato alcun filtro,
+                                // aggiungi "Assegnato a" e il nome dell'utente
+                                if (currentUser.role === 'master' && !filterUserId) {
+                                    taskContent = `
+                                        <em>Assegnato a: ${user ? user.username : 'N/A'}</em><br>
+                                        ${taskContent}
+                                    `;
+                                }
+
+                                // Aggiungi le date di assegnazione e completamento se il compito è completato
+                                if (task.completed) {
+                                    taskContent += ` (Assegnato: ${task.date_assigned}, Completato: ${task.date_completed})`;
+                                }
+
+                                li.innerHTML = taskContent;
+
+                                // Aggiungi la foto allegata dal master se presente
+                                if (task.photo) {
+                                    const img = document.createElement('img');
+                                    img.src = `/uploads/${task.photo}`;
+                                    img.alt = 'Foto allegata dal master';
+                                    img.style.maxWidth = '100px';
+                                    img.style.cursor = 'pointer';
+                                    img.addEventListener('click', () => {
+                                        document.getElementById('viewPhoto').src = `/uploads/${task.photo}`;
+                                        document.getElementById('viewPhotoModal').style.display = "block";
+                                    });
+                                    li.appendChild(img);
+                                }
+
+                                // Aggiungi la foto del compito completato se presente
+                                if (task.completed_photo) {
+                                    const img = document.createElement('img');
+                                    img.src = `/uploads/${task.completed_photo}`;
+                                    img.alt = 'Foto del compito completato';
+                                    img.style.maxWidth = '100px';
+                                    img.style.cursor = 'pointer';
+                                    img.addEventListener('click', () => {
+                                        document.getElementById('viewPhoto').src = `/uploads/${task.completed_photo}`;
+                                        document.getElementById('viewPhotoModal').style.display = "block";
+                                    });
+                                    li.appendChild(img);
+                                }
+
+                                // Aggiungi il pulsante "Completa" se il compito non è completato e appartiene all'utente corrente
+                                if (task.user_id === currentUser.id && !task.completed) {
+                                    const button = document.createElement('button');
+                                    button.textContent = 'Completa';
+                                    button.className = 'complete-task';
+                                    button.addEventListener('click', () => {
+                                        document.getElementById('task_id').value = task.id;
+                                        document.getElementById('uploadModal').style.display = "block";
+                                    });
+                                    li.appendChild(button);
+                                }
+
+                                // Aggiungi pulsanti per modificare e cancellare il compito se l'utente corrente è un master
+                                if (currentUser.role === 'master') {
+                                    const editButton = document.createElement('button');
+                                    editButton.textContent = 'Modifica';
+                                    editButton.className = 'edit-task';
+                                    editButton.addEventListener('click', () => {
+                                        document.getElementById('edit_task_id').value = task.id;
+                                        document.getElementById('edit_descrizione_compito').value = task.description;
+                                        document.getElementById('edit_user_id').value = task.user_id;
+                                        document.getElementById('edit_scadenza').value = task.deadline;
+                                        document.getElementById('editTaskModal').style.display = "block";
+                                    });
+                                    li.appendChild(editButton);
+
+                                    const deleteButton = document.createElement('button');
+                                    deleteButton.textContent = 'Cancella';
+                                    deleteButton.className = 'delete-task';
+                                    deleteButton.addEventListener('click', () => {
+                                        if (confirm('Sei sicuro di voler cancellare questo compito?')) {
+                                            fetch('/cancella_compito', {
+                                                method: 'POST',
+                                                headers: {
+                                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                                },
+                                                body: `task_id=${task.id}`
+                                            }).then(response => {
+                                                if (response.ok) {
+                                                    window.location.reload();
+                                                }
+                                            });
+                                        }
+                                    });
+                                    li.appendChild(deleteButton);
+                                }
+
+                                taskList.appendChild(li);
+                            });
+                    });
+            }
+
+            // Gestione del modale per l'upload della foto
+            const uploadModal = document.getElementById('uploadModal');
+            const spanUploadModal = uploadModal.getElementsByClassName('close')[0];
+
+            spanUploadModal.onclick = function() {
+                uploadModal.style.display = "none";
+            }
+
+            window.onclick = function(event) {
+                if (event.target == uploadModal) {
+                    uploadModal.style.display = "none";
+                }
+            }
+
+            // Gestione del modale per la visualizzazione delle foto
+            const viewPhotoModal = document.getElementById('viewPhotoModal');
+            const spanViewPhotoModal = document.getElementById('closeViewPhotoModal');
+
+            spanViewPhotoModal.onclick = function() {
+                viewPhotoModal.style.display = "none";
+            }
+
+            window.onclick = function(event) {
+                if (event.target == viewPhotoModal) {
+                    viewPhotoModal.style.display = "none";
+                }
+            }
+
+            // Gestione del modale per la modifica del compito
+            const editTaskModal = document.getElementById('editTaskModal');
+            const spanEditTaskModal = editTaskModal.getElementsByClassName('close')[0];
+
+            spanEditTaskModal.onclick = function() {
+                editTaskModal.style.display = "none";
+            }
+
+            window.onclick = function(event) {
+                if (event.target == editTaskModal) {
+                    editTaskModal.style.display = "none";
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+[
+    {"id": 1, "username": "Iolanda", "email": "iolanda77@example.com", "password": "Iolanda77", "role": "master"},
+    {"id": 2, "username": "Fabio", "email": "user1@example.com", "password": "Fabio00$$", "role": "master"},
+    {"id": 3, "username": "Emanuele", "email": "user2@example.com", "password": "Emanuele00$$", "role": "user"},
+    {"id": 4, "username": "Alessandra", "email": "user2@example.com", "password": "Alessandra00$$", "role": "user"},
+    {"id": 5, "username": "Francesco", "email": "user2@example.com", "password": "Shees00$$", "role": "user"}
+]

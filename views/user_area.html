@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+    <title>Area Utente</title>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Benvenuto, <span id="username"></span></h1>
+            <p>Email: <span id="email"></span></p>
+        </div>
+        <div class="task-list">
+            <h2>I Tuoi Compiti</h2>
+            <ul id="task-list"></ul>
+        </div>
+        <a href="/">Torna alla lista utenti</a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const userId = new URLSearchParams(window.location.search).get('userId');
+            fetch(`/dati/utenti`)
+                .then(response => response.json())
+                .then(users => {
+                    const user = users.find(u => u.id == userId);
+                    document.getElementById('username').textContent = user.username;
+                    document.getElementById('email').textContent = user.email;
+
+                    fetch('/dati/compiti')
+                        .then(response => response.json())
+                        .then(tasks => {
+                            const taskList = document.getElementById('task-list');
+                            const userTasks = tasks.filter(task => task.user_id == userId && !task.completed);
+                            userTasks.forEach(task => {
+                                const li = document.createElement('li');
+                                li.textContent = `${task.description} - ${task.completed ? 'Completato' : 'Non Completato'}`;
+                                taskList.appendChild(li);
+                            });
+                        });
+                });
+        });
+    </script>
+</body>
+</html>
